@@ -1,0 +1,10 @@
+import * as P from '../src/passo.js';
+import { attach } from '../src/bot.js';
+import fs from 'node:fs';
+const cfg = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+const { page } = await attach(cfg);
+console.log('clear:', JSON.stringify(await P.clearBasketApi(page)));
+const b = await P.getBasket(page);
+console.log('basket items', b.items, 'looksEmpty', b.looksEmpty);
+await page.goto(cfg.eventUrl, { waitUntil: 'domcontentloaded' }).catch(() => {});
+process.exit(0);

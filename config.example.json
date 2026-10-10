@@ -1,0 +1,27 @@
+{
+  "cdpUrl": "http://127.0.0.1:9222",
+  "eventId": 12739328,
+  "eventUrl": "https://www.passo.com.tr/tr/etkinlik/galatasaray-barcelona-mac-bileti-passo/12739328",
+  "saleTime": "2026-10-11T11:00:00+03:00",
+  "startBeforeSec": 90,
+  "pollIntervalMs": 700,
+  "ticketTypeRegex": "taraftar|genel",
+  "preferBestAvailable": false,
+  "categories": ["8. Kategori", "9. Kategori", "10. Kategori", "11. Kategori"],
+  "blockOrder": {
+    "8. Kategori": ["415", "414", "416", "413", "417", "400", "401", "429", "402", "428"],
+    "9. Kategori": ["412", "403", "427"],
+    "10. Kategori": ["106", "107", "105", "108", "104", "109", "206", "207", "205", "208", "204", "209", "119", "120", "118", "121", "117", "122", "219", "220", "218", "221", "217", "222"],
+    "11. Kategori": ["407", "408", "406", "409", "405", "410", "404", "411", "423", "424", "422", "425", "426"]
+  },
+  "tckn": "",
+  "phone": "",
+  "invoice": {
+    "city": "",
+    "district": "",
+    "address": ""
+  },
+  "maxSeatRetries": 6,
+  "maxBlockRetries": 4,
+  "seatClickDelayMs": 150
+}

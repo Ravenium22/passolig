@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PassoBot</title>
+<style>
+  :root { --bg:#f4f5f7; --card:#fff; --ink:#111; --muted:#667; --red:#c8102e; --green:#1b8f3a; --yellow:#e6a700; --blue:#2457c5; }
+  * { box-sizing:border-box }
+  body { margin:0; font:16px/1.45 system-ui,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--ink) }
+  .wrap { max-width:1100px; margin:0 auto; padding:16px }
+  h1 { margin:0 0 4px; font-size:26px } h1 small { font-weight:400; color:var(--muted); font-size:15px }
+  #banner { margin:14px 0; padding:18px 20px; border-radius:12px; font-size:22px; font-weight:700; background:#e9ecf1; color:#333; min-height:64px }
+  #banner.ok { background:#dff5e3; color:#145c27 } #banner.err { background:#fde2e2; color:#8a0f1e }
+  #banner.warn { background:#fff1c2; color:#6b4e00; animation:blink 1s infinite } #banner.pay { background:var(--red); color:#fff; font-size:28px; animation:blink .7s infinite }
+  #banner.info { background:#dde8ff; color:#17357d }
+  @keyframes blink { 50% { opacity:.55 } }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px } @media (max-width:820px) { .grid { grid-template-columns:1fr } }
+  .card { background:var(--card); border-radius:12px; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,.08) }
+  .card h2 { margin:0 0 10px; font-size:18px } .step { display:inline-block; width:28px; height:28px; border-radius:50%; background:var(--ink); color:#fff; text-align:center; line-height:28px; margin-right:8px; font-size:15px }
+  label { display:block; font-size:13px; color:var(--muted); margin:10px 0 3px } input, select, textarea { width:100%; padding:9px 10px; font-size:16px; border:1px solid #cfd3da; border-radius:8px; background:#fff }
+  textarea { min-height:60px } .row { display:grid; grid-template-columns:1fr 1fr; gap:10px }
+  button { font:inherit; font-weight:700; padding:12px 16px; border:0; border-radius:10px; cursor:pointer; color:#fff; background:var(--ink); margin:6px 6px 0 0 }
+  button.red { background:var(--red); font-size:20px; padding:16px 22px } button.green { background:var(--green) } button.blue { background:var(--blue) } button.grey { background:#777 } button.yellow { background:var(--yellow); color:#222 }
+  button:disabled { opacity:.45; cursor:not-allowed }
+  details { margin-top:10px } summary { cursor:pointer; color:var(--muted); font-size:14px }
+  #log { background:#14161a; color:#d6dde6; font:12.5px/1.4 Consolas,monospace; padding:12px; border-radius:10px; height:360px; overflow:auto; white-space:pre-wrap; word-break:break-word }
+  #log .w { color:#ffd166 } #log .e { color:#ff6b6b } #log .b { color:#8ef0a1; font-weight:700 }
+  .hint { color:var(--muted); font-size:14px; margin:6px 0 0 } .count { font-variant-numeric:tabular-nums }
+  ol.help { padding-left:20px; margin:8px 0 0; font-size:15px } ol.help li { margin:4px 0 }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>PassoBot <small>Galatasaray – Barcelona · satış <b id="saleTime">11 Ekim 11:00</b> · <span id="countdown" class="count"></span></small></h1>
+  <div id="banner">Panel hazır. Adımları sırayla yap.</div>
+
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h2><span class="step">1</span>Bot Chrome'unu aç ve Passo'ya giriş yap</h2>
+        <button class="blue" onclick="api('/api/chrome')">Chrome'u Aç</button>
+        <p class="hint">Yeni bir Chrome penceresi açılır. <b>O pencerede</b> Passo'ya giriş yap ve pencereyi açık bırak. Başka tarayıcıdan Passo'ya girme; Passo tek oturuma izin verir.</p>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h2><span class="step">2</span>Bilgilerin</h2>
+        <form id="f" onsubmit="return save(event)">
+          <div class="row">
+            <div><label>T.C. Kimlik No</label><input name="tckn" inputmode="numeric" maxlength="11" pattern="[0-9]{11}" required placeholder="11 hane"></div>
+            <div><label>Telefon (Passo'daki)</label><input name="phone" inputmode="tel" placeholder="5xx xxx xx xx" required></div>
+          </div>
+          <div class="row">
+            <div><label>Fatura şehri</label><input name="city" placeholder="İzmir" required></div>
+            <div><label>İlçe</label><input name="district" placeholder="Karşıyaka" required></div>
+          </div>
+          <label>Adres</label><textarea name="address" placeholder="Mahalle, sokak, no" required></textarea>
+          <details>
+            <summary>Gelişmiş (aynı PC'de 2. kişi, tribün tercihi)</summary>
+            <div class="row">
+              <div><label>Profil adı</label><input name="profile" placeholder="me"></div>
+              <div><label>Chrome portu</label><input name="port" inputmode="numeric" placeholder="9222"></div>
+            </div>
+            <label>Tribün önceliği</label>
+            <select name="side"><option value="">Varsayılan (Doğu/Kuzey önce)</option><option value="dogu">Doğu</option><option value="kuzey">Kuzey</option><option value="guney">Güney</option><option value="bati">Batı</option></select>
+            <p class="hint">Aynı bilgisayarda 2. kişi: farklı profil adı (<b>ali</b>) ve port (<b>9223</b>). Grup aynı tarafa düşsün diye herkes aynı tribünü seçsin.</p>
+          </details>
+          <button class="green" type="submit">Kaydet</button>
+        </form>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2><span class="step">3</span>Kontrol ve deneme (bugün)</h2>
+        <button id="bPre" onclick="run('preflight')">Kontrol Et</button>
+        <button id="bDry" class="yellow" onclick="run('dryrun-basket')">Deneme Yap</button>
+        <button id="bClr" class="grey" onclick="run('clear')">Sepeti Boşalt</button>
+        <p class="hint"><b>Kontrol Et:</b> giriş ve ayarları kontrol eder. Üstte "Her şey hazır" yazmalı.<br>
+        <b>Deneme Yap:</b> satıştaki başka bir maçta koltuk alıp fatura sayfasına kadar gider, <b>ödeme yapmaz</b>, sepeti boşaltır. Chrome'da <b>"Gerçek kişi"</b> kutusu çıkınca tıkla. En fazla 1-2 kez dene.<br>
+        <b>Sepeti Boşalt:</b> denemeden koltuk kaldıysa siler.</p>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h2><span class="step">4</span>Maç günü 10:50</h2>
+        <button id="bStart" class="red" onclick="run('start')">BAŞLAT</button>
+        <button id="bStop" class="grey" onclick="api('/api/stop')" disabled>Durdur</button>
+        <ol class="help">
+          <li>Chrome penceresi açık ve girişli olsun, BAŞLAT'a bas.</li>
+          <li>Bot 10:58:30'da izlemeye başlar, satış açılınca koltuğu alır.</li>
+          <li><b>Sarı</b> yanıp sönerse: Chrome'da <b>"Gerçek kişi"</b> kutusunu tıkla.</li>
+          <li><b>Kırmızı</b> yanıp sönerse: <b>ödeme sende</b>. Chrome'da "Kredi Kart İle Öde" → kart → SMS. Süre 10 dk.</li>
+        </ol>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h2>Günlük <small style="font-weight:400;color:var(--muted);font-size:13px">(botun ne yaptığı; sorun olursa buradaki yazıyı gönder)</small></h2>
+        <div id="log"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const banner = $('#banner'), logEl = $('#log');
+let running = false, lastBeep = 0;
+
+function setBanner(cls, text) { banner.className = cls; banner.textContent = text; }
+function beep(times = 2) {
+  const now = Date.now(); if (now - lastBeep < 3000) return; lastBeep = now;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    for (let i = 0; i < times; i++) {
+      const o = ctx.createOscillator(), g = ctx.createGain(); o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = 880; g.gain.value = 0.2; o.start(ctx.currentTime + i * 0.35); o.stop(ctx.currentTime + i * 0.35 + 0.22);
+    }
+  } catch {}
+}
+
+const RULES = [
+  [/PAYMENT DONE/, 'ok', 'ÖDEME TAMAM 🎉 Bilet senin.'],
+  [/ÖDEMEYİ TAMAMLA/, 'pay', 'ÖDEME SIRASI SENDE → Chrome penceresine geç: Kredi Kart İle Öde → kart → SMS (10 dk)', 4],
+  [/CLOUDFLARE/, 'warn', 'Chrome penceresinde "Gerçek kişi olduğunuzu doğrulayın" kutusunu TIKLA', 2],
+  [/E-Bilet kullanım süresi/, 'err', 'E-Bilet süren dolmuş: passotaraftar.com.tr → Kartlarım → E-Bilet süremi uzat'],
+  [/ACCOUNT BLOCKED|CATEGORY NOT ALLOWED/, 'err', 'Passo bu hesapla satışa izin vermedi (günlüğe bak)'],
+  [/NOT LOGGED IN/, 'err', 'Bot Chrome penceresinde Passo\'ya giriş yap, sonra tekrar Kontrol Et'],
+  [/Cannot reach Chrome/, 'err', 'Bot Chrome açık değil → 1. adım: Chrome\'u Aç'],
+  [/PREFLIGHT OK/, 'ok', 'Her şey hazır ✅ (giriş var, kategoriler bulundu)'],
+  [/BASKET FLOW: invoice:ready/, 'ok', 'Deneme başarılı ✅ koltuk → sepet → fatura formu doldu'],
+  [/BASKET FLOW: invoice:incomplete/, 'warn', 'Deneme: fatura formu eksik kaldı, 2. adımdaki bilgileri kontrol et'],
+  [/GOT SEAT|DRY RUN OK/, 'info', 'Koltuk alındı, sepete gidiliyor…'],
+  [/SALE OPEN/, 'info', 'SATIŞ AÇILDI, koltuk alınıyor…'],
+  [/WATCHING event|poll #/, 'info', 'Satış bekleniyor… (bot her 0.7 sn kontrol ediyor)'],
+  [/waiting\.\.\. polling starts/, 'info', 'Bekleniyor, satış saatine yakın izlemeye başlayacak'],
+  [/no seat could be selected|could not open the seat picker/, 'err', 'Koltuk alınamadı. Chrome\'da elle devam et!'],
+  [/^fatal|ERROR/, 'err', 'Hata oldu. Günlükteki yazıyı gönder.'],
+];
+
+function onLog(line) {
+  const div = document.createElement('div');
+  div.textContent = line;
+  if (/WARN/.test(line)) div.className = 'w'; else if (/ERROR|fatal/.test(line)) div.className = 'e'; else if (/^={5,}|^    [A-ZÇĞİÖŞÜ]/.test(line)) div.className = 'b';
+  logEl.appendChild(div); if (logEl.childElementCount > 600) logEl.firstChild.remove();
+  logEl.scrollTop = logEl.scrollHeight;
+  for (const [re, cls, text, b] of RULES) if (re.test(line)) { setBanner(cls, text); if (b) beep(b); break; }
+}
+
+function setRunning(r, mode) {
+  running = r;
+  for (const id of ['bPre', 'bDry', 'bClr', 'bStart']) $('#' + id).disabled = r;
+  $('#bStop').disabled = !r;
+  document.title = r ? `⏳ PassoBot (${mode})` : 'PassoBot';
+}
+
+const es = new EventSource('/api/events');
+es.addEventListener('log', (e) => onLog(JSON.parse(e.data)));
+es.addEventListener('status', (e) => {
+  const s = JSON.parse(e.data); setRunning(s.running, s.mode);
+  if (!s.running && s.exitCode != null && s.exitCode !== 0 && !/err|warn/.test(banner.className)) setBanner('err', `${s.mode} hata ile bitti (exit ${s.exitCode}), günlüğe bak`);
+  if (!s.running && s.exitCode === 0 && s.mode === 'clear') setBanner('ok', 'Sepet boşaltıldı');
+});
+es.onerror = () => setBanner('err', 'Panel bağlantısı koptu: PassoBot.bat penceresi kapandı mı? Tekrar çift tıkla.');
+
+async function api(path, bodyObj) {
+  const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyObj || {}) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) setBanner('err', j.error || 'Hata');
+  return j;
+}
+async function run(mode) {
+  if (mode === 'start' && !confirm('Maç günü botu başlıyor. Bot Chrome penceresi açık ve Passo girişi yapılmış mı?')) return;
+  const cfg = await (await fetch('/api/config')).json();
+  if (mode !== 'clear' && (!cfg.tckn || !cfg.invoice?.address)) { setBanner('warn', 'Önce 2. adımdaki bilgileri doldurup Kaydet\'e bas'); return; }
+  setBanner('info', mode === 'start' ? 'Bot başlatılıyor…' : 'Çalışıyor…');
+  await api('/api/run', { mode });
+}
+async function save(ev) {
+  ev.preventDefault();
+  const fd = new FormData($('#f'));
+  const body = { tckn: fd.get('tckn'), phone: fd.get('phone'), invoice: { city: fd.get('city'), district: fd.get('district'), address: fd.get('address') }, profile: fd.get('profile') || 'me', port: fd.get('port') || 9222, side: fd.get('side') };
+  await api('/api/config', body);
+  setBanner('ok', 'Kaydedildi. Şimdi "Kontrol Et".');
+  return false;
+}
+async function load() {
+  const c = await (await fetch('/api/config')).json();
+  const f = $('#f');
+  f.tckn.value = c.tckn; f.phone.value = c.phone; f.city.value = c.invoice.city || ''; f.district.value = c.invoice.district || ''; f.address.value = c.invoice.address || '';
+  f.profile.value = c.profile; f.port.value = c.port; f.side.value = c.side || '';
+  if (c.saleTime) {
+    const t = new Date(c.saleTime); $('#saleTime').textContent = t.toLocaleString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+    setInterval(() => { const ms = t - Date.now(); if (ms < 0) return ($('#countdown').textContent = 'satış saati geçti'); const h = Math.floor(ms / 3.6e6), m = Math.floor(ms % 3.6e6 / 6e4), s = Math.floor(ms % 6e4 / 1e3); $('#countdown').textContent = `satışa ${h} sa ${m} dk ${s} sn`; }, 1000);
+  }
+}
+load();
+</script>
+</body>
+</html>

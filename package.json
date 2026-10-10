@@ -1,0 +1,18 @@
+{
+  "name": "passo-bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Drives your own logged-in Chrome to grab a Passo match ticket the moment a sale opens, then hands over to you for payment.",
+  "scripts": {
+    "start": "node src/bot.js",
+    "preflight": "node src/bot.js --preflight",
+    "dryrun": "node scripts/dryrun.js",
+    "clear-basket": "node scripts/clear-basket.js",
+    "ui": "node src/ui.js"
+  },
+  "dependencies": {
+    "playwright-core": "^1.64.0"
+  },
+  "engines": { "node": ">=20" }
+}
