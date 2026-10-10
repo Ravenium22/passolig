@@ -59,7 +59,7 @@ Herkes aynı `blockOrder` ile koşarsa grup aynı bloğa/tarafa toplanır. Taraf
 npm run dryrun
 npm run dryrun -- --to-basket     (sepet → tanımlama → fatura sayfasına kadar gider, Devam'a basmaz, sonra sepeti boşaltır)
 ```
-`--to-basket` sonunda "BASKET FLOW: invoice:ready" görmelisin. "invoice:incomplete" ise `config.json`'daki `tckn` / `invoice` alanlarını doldur.
+`--to-basket` sonunda "BASKET FLOW: invoice:ready" görmelisin. Deneme bitince test sepeti **boşaltılır** ve Chrome etkinlik sayfasına döner; açık kalan sepet/fatura sayfasında Devam'a basarsan "Sepetinizde ürün bulunmamaktadır" demesi normaldir, bir şey satın alınmaz. "invoice:incomplete" ise `config.json`'daki `tckn` / `invoice` alanlarını doldur.
 
 ## Sorun giderme
 

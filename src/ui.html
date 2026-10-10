@@ -87,7 +87,7 @@
         <button id="bDry" class="yellow" onclick="run('dryrun-basket')">Deneme Yap</button>
         <button id="bClr" class="grey" onclick="run('clear')">Sepeti Boşalt</button>
         <p class="hint"><b>Kontrol Et:</b> giriş ve ayarları kontrol eder. Üstte "Her şey hazır" yazmalı.<br>
-        <b>Deneme Yap:</b> satıştaki başka bir maçta koltuk alıp fatura sayfasına kadar gider, <b>ödeme yapmaz</b>, sepeti boşaltır. Chrome'da <b>"Gerçek kişi"</b> kutusu çıkınca tıkla. En fazla 1-2 kez dene.<br>
+        <b>Deneme Yap:</b> satıştaki başka bir maçta koltuk alıp fatura sayfasına kadar gider, <b>ödeme yapmaz</b>, sonunda test sepetini boşaltır (o sayfada Devam'a basma, "sepet boş" der). Chrome'da <b>"Gerçek kişi"</b> kutusu çıkınca tıkla. En fazla 1-2 kez dene.<br>
         <b>Sepeti Boşalt:</b> denemeden koltuk kaldıysa siler.</p>
       </div>
 
@@ -137,7 +137,8 @@ const RULES = [
   [/NOT LOGGED IN/, 'err', 'Bot Chrome penceresinde Passo\'ya giriş yap, sonra tekrar Kontrol Et'],
   [/Cannot reach Chrome/, 'err', 'Bot Chrome açık değil → 1. adım: Chrome\'u Aç'],
   [/PREFLIGHT OK/, 'ok', 'Her şey hazır ✅ (giriş var, kategoriler bulundu)'],
-  [/BASKET FLOW: invoice:ready/, 'ok', 'Deneme başarılı ✅ koltuk → sepet → fatura formu doldu'],
+  [/DRY RUN FINISHED - test basket emptied/, 'ok', 'Deneme bitti ✅ Test sepeti boşaltıldı, Chrome ana sayfaya döndü. Gerçek alım maç günü BAŞLAT ile olur.'],
+  [/BASKET FLOW: invoice:ready/, 'ok', 'Deneme başarılı ✅ koltuk → sepet → fatura formu doldu (şimdi sepet boşaltılıyor)'],
   [/BASKET FLOW: invoice:incomplete/, 'warn', 'Deneme: fatura formu eksik kaldı, 2. adımdaki bilgileri kontrol et'],
   [/GOT SEAT|DRY RUN OK/, 'info', 'Koltuk alındı, sepete gidiliyor…'],
   [/SALE OPEN/, 'info', 'SATIŞ AÇILDI, koltuk alınıyor…'],

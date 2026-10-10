@@ -80,6 +80,11 @@ if (!args.keep) {
   }
   const final = await P.getBasket(page);
   log.info('final basket:', final.status, 'items', final.items, 'looksEmpty', final.looksEmpty, final.raw.slice(0, 200));
+  // Leave Chrome on the event page: the basket/odeme page that is open belongs to the test basket we just emptied,
+  // pressing "Devam" there would only say "Sepetinizde ürün bulunmamaktadır".
+  await page.goto(cfg.eventUrl, { waitUntil: 'domcontentloaded' }).catch(() => {});
+  log.big('DRY RUN FINISHED - test basket emptied, Chrome returned to the event page (this was a test, nothing was bought)');
+} else {
+  log.big('DRY RUN FINISHED - basket KEPT (--keep): the hold expires in ~10 min');
 }
-log.big('DRY RUN FINISHED');
 process.exit(0);
