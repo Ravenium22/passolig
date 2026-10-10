@@ -27,6 +27,9 @@
   #log { background:#14161a; color:#d6dde6; font:12.5px/1.4 Consolas,monospace; padding:12px; border-radius:10px; height:360px; overflow:auto; white-space:pre-wrap; word-break:break-word }
   #log .w { color:#ffd166 } #log .e { color:#ff6b6b } #log .b { color:#8ef0a1; font-weight:700 }
   .hint { color:var(--muted); font-size:14px; margin:6px 0 0 } .count { font-variant-numeric:tabular-nums }
+  .cat { display:flex; align-items:center; gap:8px; padding:6px 8px; border:1px solid #e3e6eb; border-radius:8px; margin:4px 0; background:#fafbfc }
+  .cat input[type=checkbox] { width:18px; height:18px; margin:0 } .cat .n { flex:1; font-size:15px } .cat .p { color:var(--muted); font-size:13px; white-space:nowrap }
+  .cat button { margin:0; padding:4px 9px; background:#dfe3ea; color:#222; font-size:13px } .cat.on { background:#fff; border-color:#9fb3d9 } .cat .rank { width:22px; color:var(--muted); font-size:13px; text-align:right }
   ol.help { padding-left:20px; margin:8px 0 0; font-size:15px } ol.help li { margin:4px 0 }
 </style>
 </head>
@@ -56,17 +59,24 @@
           </div>
           <label>Adres</label><textarea name="address" placeholder="Mahalle, sokak, no" required></textarea>
           <details>
-            <summary>Gelişmiş (aynı PC'de 2. kişi, tribün tercihi)</summary>
+            <summary>Gelişmiş (aynı PC'de 2. kişi)</summary>
             <div class="row">
               <div><label>Profil adı</label><input name="profile" placeholder="me"></div>
               <div><label>Chrome portu</label><input name="port" inputmode="numeric" placeholder="9222"></div>
             </div>
-            <label>Tribün önceliği</label>
-            <select name="side"><option value="">Varsayılan (Doğu/Kuzey önce)</option><option value="dogu">Doğu</option><option value="kuzey">Kuzey</option><option value="guney">Güney</option><option value="bati">Batı</option></select>
-            <p class="hint">Aynı bilgisayarda 2. kişi: farklı profil adı (<b>ali</b>) ve port (<b>9223</b>). Grup aynı tarafa düşsün diye herkes aynı tribünü seçsin.</p>
+            <p class="hint">Aynı bilgisayarda 2. kişi: farklı profil adı (<b>ali</b>) ve port (<b>9223</b>).</p>
           </details>
           <button class="green" type="submit">Kaydet</button>
         </form>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h2><span class="step">2b</span>Kategori sırası ve tribün</h2>
+        <p class="hint" style="margin:0 0 6px">İşaretli kategoriler yukarıdan aşağıya denenir: ilk sırada yer yoksa bir sonrakine geçer. Fiyatlar Passo'dan (10 Ekim). Plan numarası = tribün planındaki numara.</p>
+        <div id="cats"></div>
+        <label>Tribün önceliği (grup aynı tarafa düşsün diye herkes aynısını seçsin)</label>
+        <select id="side"><option value="">Varsayılan (Doğu/Kuzey önce)</option><option value="dogu">Doğu</option><option value="kuzey">Kuzey</option><option value="guney">Güney</option><option value="bati">Batı</option></select>
+        <button class="green" onclick="saveCats()">Kategorileri Kaydet</button>
       </div>
     </div>
 
@@ -178,16 +188,57 @@ async function run(mode) {
 async function save(ev) {
   ev.preventDefault();
   const fd = new FormData($('#f'));
-  const body = { tckn: fd.get('tckn'), phone: fd.get('phone'), invoice: { city: fd.get('city'), district: fd.get('district'), address: fd.get('address') }, profile: fd.get('profile') || 'me', port: fd.get('port') || 9222, side: fd.get('side') };
+  const body = { tckn: fd.get('tckn'), phone: fd.get('phone'), invoice: { city: fd.get('city'), district: fd.get('district'), address: fd.get('address') }, profile: fd.get('profile') || 'me', port: fd.get('port') || 9222 };
   await api('/api/config', body);
   setBanner('ok', 'Kaydedildi. Şimdi "Kontrol Et".');
   return false;
+}
+// Passo category name -> label shown to the user. Plan number = number on the stadium plan (Passo's 4 premium names shift it by 4).
+const CATS = [
+  ['Premium', 'Premium (plan 1)', '₺75.000'], ['Delux', 'Delux (plan 2)', '₺70.000'], ['Lux', 'Lux (plan 3)', '₺67.500'], ['Classic', 'Classic (plan 4)', '₺65.000'],
+  ['1. Kategori', '1. Kategori (plan 5)', '₺50.000'], ['2. Kategori', '2. Kategori (plan 6)', '₺45.000'], ['3. Kategori', '3. Kategori (plan 7)', '₺40.000'], ['4. Kategori', '4. Kategori (plan 8)', '₺35.000'],
+  ['5. Kategori', '5. Kategori (plan 9)', '₺30.000'], ['6. Kategori', '6. Kategori (plan 10)', '₺25.000'], ['7. Kategori', '7. Kategori (plan 11)', '₺22.500'],
+  ['8. Kategori', '8. Kategori (plan 12) · 413-417, 400-402, 428-429', '₺15.000'], ['9. Kategori', '9. Kategori (plan 13) · 412, 403, 427', '₺13.000'],
+  ['10. Kategori', '10. Kategori (plan 14) · 104-109, 204-209, 117-122, 217-222', '₺3.500'], ['11. Kategori', '11. Kategori (plan 15) · 404-411, 422-426', '₺2.800'],
+];
+let catOrder = []; // Passo names in display order; checked state kept in DOM
+function renderCats(selected) {
+  const sel = selected || [];
+  catOrder = [...sel.filter((n) => CATS.some((c) => c[0] === n)), ...CATS.map((c) => c[0]).filter((n) => !sel.includes(n))];
+  const box = $('#cats'); box.innerHTML = '';
+  let rank = 0;
+  for (const name of catOrder) {
+    const [, label, price] = CATS.find((c) => c[0] === name);
+    const on = sel.includes(name);
+    const row = document.createElement('div'); row.className = 'cat' + (on ? ' on' : ''); row.dataset.name = name;
+    row.innerHTML = `<span class="rank">${on ? ++rank + '.' : ''}</span><input type="checkbox" ${on ? 'checked' : ''}><span class="n">${label}</span><span class="p">${price}</span><button type="button" title="yukarı">▲</button><button type="button" title="aşağı">▼</button>`;
+    row.querySelector('input').onchange = () => renderCats(currentCats(row));
+    const [up, down] = row.querySelectorAll('button');
+    up.onclick = () => move(name, -1); down.onclick = () => move(name, 1);
+    box.appendChild(row);
+  }
+}
+function currentCats(changedRow) {
+  return [...$('#cats').querySelectorAll('.cat')].filter((r) => r.querySelector('input').checked).map((r) => r.dataset.name);
+}
+function move(name, dir) {
+  const i = catOrder.indexOf(name), j = i + dir; if (j < 0 || j >= catOrder.length) return;
+  const checked = currentCats();
+  [catOrder[i], catOrder[j]] = [catOrder[j], catOrder[i]];
+  renderCats(catOrder.filter((n) => checked.includes(n)));
+}
+async function saveCats() {
+  const categories = currentCats();
+  if (!categories.length) { setBanner('warn', 'En az bir kategori işaretle'); return; }
+  await api('/api/config', { categories, side: $('#side').value });
+  setBanner('ok', 'Kategori sırası kaydedildi: ' + categories.join(' → '));
 }
 async function load() {
   const c = await (await fetch('/api/config')).json();
   const f = $('#f');
   f.tckn.value = c.tckn; f.phone.value = c.phone; f.city.value = c.invoice.city || ''; f.district.value = c.invoice.district || ''; f.address.value = c.invoice.address || '';
-  f.profile.value = c.profile; f.port.value = c.port; f.side.value = c.side || '';
+  f.profile.value = c.profile; f.port.value = c.port; $('#side').value = c.side || '';
+  renderCats(c.categories || []);
   if (c.saleTime) {
     const t = new Date(c.saleTime); $('#saleTime').textContent = t.toLocaleString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
     setInterval(() => { const ms = t - Date.now(); if (ms < 0) return ($('#countdown').textContent = 'satış saati geçti'); const h = Math.floor(ms / 3.6e6), m = Math.floor(ms % 3.6e6 / 6e4), s = Math.floor(ms % 6e4 / 1e3); $('#countdown').textContent = `satışa ${h} sa ${m} dk ${s} sn`; }, 1000);

@@ -36,6 +36,10 @@ function saveConfig(patch) {
   if ('profile' in patch) cfg.profile = String(patch.profile || 'me').replace(/[^\w-]/g, '') || 'me';
   if ('port' in patch) cfg.cdpUrl = `http://127.0.0.1:${Number(patch.port) || 9222}`;
   if ('side' in patch) cfg.side = String(patch.side || '');
+  if (Array.isArray(patch.categories)) {
+    const cats = patch.categories.map((s) => String(s).trim()).filter(Boolean);
+    if (cats.length) cfg.categories = cats;
+  }
   const txt = JSON.stringify(cfg, null, 2).replace(/\[\s+("[^\]]*?")\s+\]/gs, (m, i) => '[' + i.replace(/\s*\n\s*/g, ' ') + ']');
   fs.writeFileSync(CONFIG, txt + '\n');
   return cfg;

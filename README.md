@@ -7,9 +7,9 @@ Kurallar (Passo'dan): **1 TC = 1 bilet**, hesap sahibi = bilet sahibi, GS logolu
 ## Kolay yol: indir, PassoBot.bat'a çift tıkla
 
 1. **Node.js LTS** kur: https://nodejs.org ("Windows Installer", hep Next). Google Chrome kurulu olsun.
-2. Botu al: sana gönderilen **passolig-main.zip** dosyasını (ya da GitHub'a davet edildiysen tek tık: https://github.com/Ravenium22/passolig/releases/download/v1.0/passolig-main.zip) sağ tık **Tümünü ayıkla** → `passolig-main` klasörü çıkar.
+2. Botu al: sana gönderilen **passolig-main.zip** dosyasını (ya da GitHub'a davet edildiysen tek tık: https://github.com/Ravenium22/passolig/releases/latest/download/passolig-main.zip) sağ tık **Tümünü ayıkla** → `passolig-main` klasörü çıkar.
 3. Klasörde **`PassoBot.bat`** çift tıkla. Windows "korudu" uyarısı verirse **Daha fazla bilgi → Yine de çalıştır**. İlk seferde paketleri kurar (1 dk), sonra tarayıcıda panel açılır (http://127.0.0.1:4567). Siyah pencereyi kapatma.
-4. Panelde sırayla: **1 Chrome'u Aç** (açılan pencerede Passo'ya gir) → **2 Bilgilerin** (TC, telefon, fatura adresi) **Kaydet** → **3 Kontrol Et** ("Her şey hazır" yazmalı) → bugün bir kez **Deneme Yap** ("Deneme başarılı" yazmalı; koltuğa tıklayınca Chrome'da çıkan "Gerçek kişi" kutusunu sen tıkla).
+4. Panelde sırayla: **1 Chrome'u Aç** (açılan pencerede Passo'ya gir) → **2 Bilgilerin** (TC, telefon, fatura adresi) **Kaydet** → **2b Kategori sırası** (hangi kategoriler, hangi sırayla; tribün tercihi) **Kategorileri Kaydet** → **3 Kontrol Et** ("Her şey hazır" yazmalı) → bugün bir kez **Deneme Yap** ("Deneme başarılı" yazmalı; koltuğa tıklayınca Chrome'da çıkan "Gerçek kişi" kutusunu sen tıkla).
 5. Maç günü 10:50: panelde **BAŞLAT**. Sarı yanıp sönerse Chrome'da kutuyu tıkla, kırmızı yanıp sönerse ödeme sırası sende.
 
 Aynı PC'de 2. kişi: klasörü ikinci bir kopyaya kopyala (config ayrı olsun), o kopyada bir kısayol/komutla `PassoBot.bat 4568` çalıştır (panel 4568 portunda açılır), panelde "Gelişmiş" altında profil adı `ali`, port `9223` yaz, Kaydet, sonra Chrome'u Aç ve o pencerede kendi hesabıyla girsin. Her panel kendi botunu çalıştırır.
