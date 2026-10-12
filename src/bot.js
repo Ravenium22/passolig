@@ -133,9 +133,14 @@ export async function watch(page, cfg, cats, { now = false } = {}) {
   }
   await page.goto(cfg.eventUrl, { waitUntil: 'domcontentloaded' }).catch(() => {});
   await P.sleep(800);
-  log.big(`WATCHING event ${cfg.eventId} every ${cfg.pollIntervalMs} ms`);
-  let n = 0, errors = 0;
-  const deadline = saleAt + 60 * 60 * 1000;
+  // After the main sale (sale time + 1h) tickets only appear as returns/releases, one block at a time.
+  // "Returns mode": poll slower, forever, and only jump when one of OUR categories opens.
+  const returnsMode = Date.now() > saleAt + 60 * 60 * 1000;
+  const interval = returnsMode ? (cfg.returnsPollIntervalMs || 2000) : cfg.pollIntervalMs;
+  if (returnsMode) log.big(`RETURNS MODE: sale time passed, watching event ${cfg.eventId} for returned tickets in your categories every ${interval} ms (runs until you stop it)`);
+  else log.big(`WATCHING event ${cfg.eventId} every ${interval} ms`);
+  let n = 0, errors = 0, lastReload = Date.now(), lastOpen = '';
+  const deadline = returnsMode ? Infinity : saleAt + 60 * 60 * 1000;
   while (Date.now() < deadline) {
     const t = Date.now();
     try {
@@ -144,13 +149,21 @@ export async function watch(page, cfg, cats, { now = false } = {}) {
       if (s.availStatus === 401 || s.catStatus === 401) {
         log.warn('401 from API - reloading page to refresh session');
         await page.goto(cfg.eventUrl, { waitUntil: 'domcontentloaded' }).catch(() => {});
+        lastReload = Date.now();
       }
-      if (n % 10 === 1) log.info(`poll #${n} avail=${s.avail} open=[${s.openCats.join(',')}] wanted=[${s.wantedOpen.join(',')}] (${Date.now() - t} ms)`);
+      const openNow = s.openCats.join(',');
+      if (n % (returnsMode ? 30 : 10) === 1 || openNow !== lastOpen) log.info(`poll #${n} avail=${s.avail} open=[${openNow}] wanted=[${s.wantedOpen.join(',')}] (${Date.now() - t} ms)`);
+      lastOpen = openNow;
       // NOTE: `avail` (getisavailableseatforeventorserie) was already true the day before while every
       // category was sold out, so it is informational only. Trigger on a category actually opening.
-      if (s.wantedOpen.length || s.openCats.length) {
-        log.big(`SALE OPEN! avail=${s.avail} open=[${s.openCats.join(',')}] wanted=[${s.wantedOpen.join(',')}]`);
-        return s;
+      // Live sale: any category opening means the gates opened -> go. Returns mode: only our categories matter.
+      if (s.wantedOpen.length || (!returnsMode && s.openCats.length)) {
+        log.big(`${returnsMode ? 'TICKETS APPEARED' : 'SALE OPEN'}! avail=${s.avail} open=[${openNow}] wanted=[${s.wantedOpen.join(',')}]`);
+        return { ...s, returnsMode };
+      }
+      if (returnsMode && Date.now() - lastReload > 4 * 60000) {
+        await page.goto(cfg.eventUrl, { waitUntil: 'domcontentloaded' }).catch(() => {});
+        lastReload = Date.now();
       }
     } catch (e) {
       errors++;
@@ -158,7 +171,7 @@ export async function watch(page, cfg, cats, { now = false } = {}) {
       if (errors % 5 === 0) await page.goto(cfg.eventUrl, { waitUntil: 'domcontentloaded' }).catch(() => {});
     }
     const el = Date.now() - t;
-    if (el < cfg.pollIntervalMs) await P.sleep(cfg.pollIntervalMs - el);
+    if (el < interval) await P.sleep(interval - el);
   }
   log.error('gave up waiting (1h after sale time)');
   process.exit(2);
@@ -312,11 +325,21 @@ export async function main() {
   const { page } = await attach(cfg);
   const cats = await preflight(page, cfg);
   if (args.preflight) { log.big('PREFLIGHT OK'); process.exit(0); }
-  await watch(page, cfg, cats, { now: !!args.now });
-  const opened = await go(page, cfg);
-  if (!opened) { log.error('could not open the seat picker'); await screenshot(page, 'go-failed'); await handoff(page, null); return; }
-  const result = await pick(page, cfg, cats);
-  if (!result) { await screenshot(page, 'pick-failed'); await handoff(page, null); return; }
+  let result = null;
+  for (let attempt = 1; ; attempt++) {
+    const sig = await watch(page, cfg, cats, { now: !!args.now && attempt === 1 });
+    const opened = await go(page, cfg);
+    if (!opened) {
+      log.error('could not open the seat picker'); await screenshot(page, 'go-failed');
+      if (sig.returnsMode) { log.warn('returns mode: back to watching'); await P.sleep(3000); continue; }
+      await handoff(page, null); return;
+    }
+    result = await pick(page, cfg, cats);
+    if (result) break;
+    await screenshot(page, 'pick-failed');
+    if (sig.returnsMode) { log.warn('returns mode: the returned seat was gone before we got it, back to watching'); await page.goto(cfg.eventUrl, { waitUntil: 'domcontentloaded' }).catch(() => {}); await P.sleep(2000); continue; }
+    await handoff(page, null); return;
+  }
   log.big(`GOT SEAT: ${result.cat.name} block ${result.block.title || result.block.id}`);
   const status = await basket(page, cfg).catch((e) => { if (e?.fatal) throw e; log.error('basket flow error', String(e).slice(0, 200)); return 'error'; });
   result.basketStatus = status;

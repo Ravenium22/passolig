@@ -50,6 +50,8 @@ Aynı PC'de 2. kişi: klasörü ikinci bir kopyaya kopyala (config ayrı olsun),
 - Cloudflare "insan mısın" kontrolü çıkarsa bot bekler; sen pencerede kutuyu tıkla, bot devam eder.
 - "T.C. Kimlik No" penceresi çıkarsa bot `config.json`'daki TCKN'yi yazar (boşsa sen yazarsın).
 
+**Satış saati geçtikten sonra** (iade/açılan biletler): BAŞLAT'a basınca bot "iade modu"na girer; her 2 sn'de senin kategorilerinden birinde bilet açılıp açılmadığına bakar, açılınca anında koltuğu almaya gider, alamazsa izlemeye döner. Sen durdurana kadar çalışır; Chrome penceresi açık ve girişli kalsın, sen de bilgisayarın yakınında ol (Cloudflare kutusu + ödeme yine sende).
+
 Herkes aynı `blockOrder` ile koşarsa grup aynı bloğa/tarafa toplanır. Tarafı değiştirmek için: `npm start -- --side kuzey` (kuzey | guney | dogu | bati).
 
 ## Önceden deneme (bugün)
